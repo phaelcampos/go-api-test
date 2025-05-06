@@ -66,5 +66,5 @@ jobs:
             --name meu-container \
             -p 80:8080 \
             --restart always \
-            seu-usuario/sua-imagem:latest # Ou a imagem buildada localmente
+            phaelcampos/go-app:latest
 
