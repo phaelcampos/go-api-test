@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-and-push:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: cicd
     steps:
@@ -22,14 +23,12 @@ jobs:
       run: go test -v ./...
 
     - name: Docker Login
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Build and push Docker images
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: docker/build-push-action@v6
       with:
         context: .
@@ -38,17 +37,19 @@ jobs:
         tags: phaelcampos/go-app:latest
 
   deploy-app:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-push
     runs-on: [self-hosted, linux, x64] 
     environment: cicd
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
         
-      - name: Login no Docker Registry
+      - name: Docker Login
         uses: docker/login-action@v3
         with:
-           username: ${{ secrets.DOCKER_USERNAME }}
-           password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Parar e remover container antigo
         run: |
@@ -56,6 +57,7 @@ jobs:
           docker rm meu-container || true
 
       - name: Baixar imagem mais recente
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker pull phaelcampos/go-app:latest
 
       - name: Iniciar novo container
